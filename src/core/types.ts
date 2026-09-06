@@ -1,0 +1,11 @@
+export type Point = { x: number; y: number; t?: number };
+export type Atom = { id: string; x: number; y: number; element: string; charge?: number; isotope?: number; hydrogens?: number };
+export type Bond = { id: string; a: string; b: string; order: 1 | 2 | 3; stereo?: 'up' | 'down' | 'either'; orderEdited?: boolean };
+export type Stroke = { id: string; points: Point[] };
+export type Sketch = { version: 1; title: string; atoms: Atom[]; bonds: Bond[]; ink: Stroke[] };
+export type Tool = 'pencil' | 'eraser' | 'select' | 'box-erase';
+export type BondLine = { id: string; bondId: string; index: number; from: Point; to: Point };
+export type Recognition = { sketch: Sketch; recognized: boolean; label: string; kind: 'ring' | 'atom' | 'bond' | 'ink' };
+export const emptySketch = (): Sketch => ({ version: 1, title: '無題のノート', atoms: [], bonds: [], ink: [] });
+let serial = 0;
+export const uid = (prefix: string): string => `${prefix}-${Date.now().toString(36)}-${(++serial).toString(36)}`;

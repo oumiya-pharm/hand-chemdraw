@@ -1,0 +1,31 @@
+import {test,expect} from '@playwright/test';
+import {readFile} from 'node:fs/promises';
+test('fresh offline restart can draw and convert without a server',async({page,context})=>{
+  const external:string[]=[];
+  context.on('request',r=>{if(!r.url().startsWith('http://127.0.0.1:4173')&&!r.url().startsWith('data:')&&!r.url().startsWith('blob:'))external.push(r.url());});
+  await page.goto('/');
+  await page.evaluate(async()=>{await navigator.serviceWorker.ready;});
+  await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  const offlineFailures:string[]=[];
+  page.on('requestfailed',r=>offlineFailures.push(r.url()));
+  await context.setOffline(true);
+  await page.reload();
+  const box=await page.getByTestId('sketch-canvas').boundingBox();if(!box)throw Error('No paper');
+  const points=[{x:500,y:280},{x:450,y:367},{x:350,y:367},{x:300,y:280},{x:350,y:193},{x:450,y:193},{x:500,y:280}];
+  await page.mouse.move(box.x+points[0].x,box.y+points[0].y);await page.mouse.down();
+  for(const p of points.slice(1))await page.mouse.move(box.x+p.x,box.y+p.y,{steps:12});await page.mouse.up();
+  await expect(page.locator('.formula')).toHaveText('C6H6');
+  await page.getByRole('button',{name:'書き出す',exact:true}).click();
+  // Indigo may serialize benzene in aromatic or equivalent Kekule form.
+  await expect(page.getByTestId('export-preview')).toHaveText(/^(c1ccccc1|C1C=CC=CC=1)$/);
+  await page.getByRole('button',{name:'ChemDraw CDX',exact:true}).click();
+  await expect(page.getByTestId('export-preview')).toContainText('bytes');
+  const download=page.waitForEvent('download');await page.getByRole('button',{name:'ファイルを保存',exact:true}).click();
+  const saved=await download;
+  expect(saved.suggestedFilename()).toMatch(/\.cdx$/);
+  const bytes=await readFile((await saved.path())!);
+  expect(bytes.length).toBeGreaterThan(8);
+  expect(bytes.subarray(0,8).toString('ascii')).toBe('VjCD0100');
+  expect(offlineFailures).toEqual([]);
+  expect(external).toEqual([]);
+});

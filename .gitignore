@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.superpowers/
+test-results/
+playwright-report/
+*.tsbuildinfo
+.DS_Store
+.playwright-mcp/
+paper-initial.png
+.te-preview.log

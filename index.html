@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f1f3f0" />
+  <meta name="application-name" content="te-hand-chemistry" />
+  <meta name="description" content="紙に描くように、構造式を。手書きの化学ノート。" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <title>te — 手書きの化学ノート</title>
+</head>
+<body>
+  <div id="root">
+    <main id="file-start" hidden style="max-width:520px;margin:15vh auto;padding:32px;font:16px/1.8 system-ui;color:#263e35">
+      <h1>te をひらく</h1>
+      <p>フォルダ内の <strong>start.command</strong> をダブルクリックすると、ノートが開きます。</p>
+      <p>すでに起動している場合は、こちらから続けられます。</p>
+      <p><a href="http://127.0.0.1:4173/" style="color:#315e49;font-weight:bold">手書きの化学ノートを開く →</a></p>
+      <p style="font-size:14px">このHTMLファイルを直接開くと、ノートは起動しません。ターミナルでは <code>npm start</code> でも起動できます。</p>
+    </main>
+  </div>
+  <script>if(location.protocol==='file:')document.getElementById('file-start').hidden=false;</script>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

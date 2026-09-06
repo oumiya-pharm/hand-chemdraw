@@ -1,0 +1,9 @@
+# Stereo and atom-label rendering
+
+Implemented shared pure geometry in `src/core/render.ts` for canvas and SVG export. `bondMarks(sketch)` returns oriented solid wedges, widening hash segments, and alternating either-stereo polylines. The wedge tip and narrow hash end are at bond `a`. `regularBondLines(sketch)` omits the corresponding ordinary single-bond lines; `bondLines(sketch)` retains the full hit-test representation.
+
+`atomLabels(sketch)` returns atom IDs, coordinates, and text parts with optional `super`/`sub` script. Both consumers can show isotopes, explicit hydrogen counts, and charges consistently. Decorated bonded carbon is visible. Ordinary bonded carbon stays implicit. Export escapes label text and uses the same geometry and parts. Label trimming now also applies to decorated carbon and scales down for short bonds to avoid reversed endpoints.
+
+Canvas integration: use `regularBondLines` for visible lines; render `bondMarks` as polygons (`wedge`), lines from `segments` (`hash`), or polylines (`either`). Map `atomLabels` by `atomId`, rendering `parts` with `<tspan baselineShift={part.script} fontSize="12">` for script parts and plain text for other parts. Give filled wedges `stroke="none"`; give other marks `fill="none"`. Single bonds carry wedge stereochemistry; higher-order bonds retain ordinary multiple-bond geometry.
+
+Validation: wrote seven behavioral tests first, observed all seven fail against previous renderer, then implemented. `npm test -- src/core/render.test.ts src/core/core.test.ts` passes 13 tests. Tests assert wedge direction including reversed endpoints, hash widening, either oscillation, exported primitive counts, shared isotope/H/charge parts, escaping, hidden ordinary carbon, and short-bond endpoint order. `npx tsc -b` passes. Canvas/browser validation is left to the parent integration task.
