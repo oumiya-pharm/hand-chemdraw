@@ -1,0 +1,15 @@
+# Only send the files used by the image build.
+*
+!Dockerfile
+!.dockerignore
+!package.json
+!package-lock.json
+!index.html
+!tsconfig.json
+!vite.config.ts
+!public/
+!public/**
+!src/
+!src/**
+!docker/
+!docker/**

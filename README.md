@@ -1,5 +1,7 @@
 # te — 手書きの化学ノート
 
+[日本語](README.md) | [English](README.en.md)
+
 紙に鉛筆で描いて、消しゴムで消す感覚で構造式を編集するブラウザアプリです。
 
 六角形を描くとベンゼン環に整い、上のNボタンを選んで頂点をなぞると原子が置き換わります。結合の種類、手前／奥の立体表記、N⁺やO⁻もボタンで選べます。消しゴムで二重結合の片方を消すと単結合になり、横に線を足すと戻せます。認識、化学処理、保存、出力はこの端末だけで実行します。
@@ -7,6 +9,32 @@
 描画を確定するたびに結合長・角度を自動整形し、どの環も共通の結合長に揃えます。原子価を超える新しい結合は取り消し、元素の上書きで不正になる多重結合は補正します。整形は入力と同じUndoに含まれ、次の入力やRedoを上書きしません。
 
 ## 起動
+
+### Dockerで起動（Node.jsのインストール不要）
+
+Docker Desktop、またはDocker EngineとComposeプラグインを起動した状態で、このリポジトリのフォルダで実行します。
+
+```sh
+docker compose up --build -d
+```
+
+**[http://127.0.0.1:8080/](http://127.0.0.1:8080/)** を開いてください。初回ビルドはベースイメージとnpm依存パッケージを取得するため、インターネット接続が必要です。ホスト側のNode.js・npmは不要です。
+
+```sh
+docker compose ps          # 起動状態（healthy）を確認
+docker compose logs -f app # ログを表示（Ctrl+Cでログ表示を終了）
+docker compose down        # コンテナを停止・削除
+```
+
+変更を反映するときは、もう一度 `docker compose up --build -d` を実行します。オフライン用キャッシュの更新には、ブラウザを再読み込みしてから同じアプリのタブを閉じ、開き直してください。
+
+既定ではこのPCの8080番だけに公開します。ポートを変える場合は、リポジトリ直下に `.env` を作って `TE_PORT=8081` と書き、起動コマンドを再実行して `http://127.0.0.1:8081/` を開きます。macOS/Linuxでは `TE_PORT=8081 docker compose up --build -d` でも指定できます。
+
+Docker版はビルド済みのHTML・JavaScript・WASMをNginxで配信します。化学処理やノート保存は引き続きブラウザ内で行い、コンテナ側への構造の送信やデータベースの設定はありません。コンテナを削除してもブラウザのノートは残ります。ただし保存先はURLのホスト名とポートごとに別なので、4173番の版から移るときやポートを変更するときは `.te.json` を書き出して読み込んでください。
+
+構成は [Dockerfile](Dockerfile)、[compose.yaml](compose.yaml)、[Nginx設定](docker/nginx.conf) にあります。Dockerfileは[公式Nodeイメージ](https://hub.docker.com/_/node)でビルドし、[公式Nginxイメージ](https://hub.docker.com/_/nginx)に成果物だけをコピーします。
+
+### Node.jsで起動
 
 Node.jsの現行LTSまたはNode 25とnpmを利用します。この環境での検証はNode 25.9.0です。
 
@@ -134,6 +162,8 @@ SMILES、MOL/SDF（V2000/V3000）、CDX、CDXML、InChI、InChIKey、CML、KET�
 | 電荷ボタンが使えない | 先にNやOなどの原子を選ぶ |
 | 「構造を確認してください」と出る | 通知の原子価や立体指定の理由を確認し、元素・電荷・結合を修正する |
 | 起動しない | `index.html`を直接開かず、`npm start`で表示されたHTTP URLを開く |
+| Dockerで接続できない | Dockerを起動し、`docker compose ps` と `docker compose logs app` を確認する。ポートの競合は `TE_PORT` で変更できる |
+| Docker版で以前のノートが見えない | ホスト名やポートが変わると別の保存先になる。以前のURLから `.te.json` を書き出し、新しいURLで読み込む |
 | 更新したボタンが出ない | 本番ビルド後に一度再読み込みし、同じHTTPアプリのタブを閉じて開き直す。オフライン用キャッシュの更新を適用する |
 
 ## 開発と検証
@@ -146,6 +176,13 @@ npx playwright test --config playwright.production.config.ts
 ```
 
 ブラウザ試験はインストール済みGoogle Chromeを使用します。未インストール環境ではPlaywright設定のchannelを外し、`npx playwright install chromium` を実行してください。
+
+起動済みのDocker版でオフライン描画・化学変換・CDX保存を検証する場合は、ホスト側にテスト用のNode.js依存を入れてから実行します（macOS/Linux）。アプリの起動だけなら不要です。
+
+```sh
+npm ci
+TE_TEST_URL=http://127.0.0.1:8080 npx playwright test --config playwright.production.config.ts
+```
 
 ### 機能を追加・変更する場所
 
@@ -161,6 +198,7 @@ npx playwright test --config playwright.production.config.ts
 | 紙面とSVG出力 | `src/core/render.ts` | くさび、破線くさび、波線、原子の電荷表示 |
 | 化学変換と自動整形 | `src/chemistry/engine.ts`、`src/useChemicalNormalization.ts` | 実Indigo WASMでの往復、ID・立体情報・共通結合長の維持 |
 | 保存形式とデータ検証 | `src/core/types.ts`、`src/storage.ts`、`src/components/ExportDialog.tsx` | 新しいデータを読み書きできること、既存ファイルとの互換性 |
+| Dockerでのビルド・配信 | `Dockerfile`、`compose.yaml`、`docker/nginx.conf`、`.dockerignore` | WASMのMIME型、Service Worker更新、ヘルスチェック、オフライン再起動 |
 
 新しい結合種類はボタンだけを増やして完了にはしません。データ型、保存時の検証、紙面描画、化学形式への変換がすべて対応する必要があります。現在の結合次数は1～3、立体指定はup/down/eitherです。配位結合や反応矢印などを追加する際は、編集モデルを拡張し、対応しない出力を明示してください。
 
@@ -177,6 +215,7 @@ npx playwright test --config playwright.production.config.ts
 - [結合種類・立体表記・イオン選択の検証](docs/evidence/bond-ion-tools.md)
 - [化学処理の検証記録](docs/evidence/chemistry-report.md)
 - [オフラインの検証記録](docs/evidence/offline-report.md)
+- [Docker版と英語READMEの検証](docs/evidence/docker-report.md)
 
 ## ライセンス
 

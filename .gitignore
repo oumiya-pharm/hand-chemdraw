@@ -8,3 +8,5 @@ playwright-report/
 .playwright-mcp/
 paper-initial.png
 .te-preview.log
+.env
+.env.*

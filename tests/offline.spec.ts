@@ -1,8 +1,9 @@
 import {test,expect} from '@playwright/test';
 import {readFile} from 'node:fs/promises';
-test('fresh offline restart can draw and convert without a server',async({page,context})=>{
+test('fresh offline restart can draw and convert without a server',async({page,context,baseURL})=>{
+  const origin=new URL(baseURL!).origin;
   const external:string[]=[];
-  context.on('request',r=>{if(!r.url().startsWith('http://127.0.0.1:4173')&&!r.url().startsWith('data:')&&!r.url().startsWith('blob:'))external.push(r.url());});
+  context.on('request',r=>{if(!r.url().startsWith('data:')&&!r.url().startsWith('blob:')&&new URL(r.url()).origin!==origin)external.push(r.url());});
   await page.goto('/');
   await page.evaluate(async()=>{await navigator.serviceWorker.ready;});
   await page.waitForFunction(()=>!!navigator.serviceWorker.controller);

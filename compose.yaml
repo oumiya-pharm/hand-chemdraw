@@ -1,0 +1,6 @@
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:${TE_PORT:-8080}:80"
+    restart: unless-stopped
